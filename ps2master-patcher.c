@@ -10,12 +10,28 @@
  *
  */
 
+// 64-bit file offsets: PS2 DVD images are larger than 2 GB
+#ifndef _WIN32
+#define _FILE_OFFSET_BITS 64
+#endif
+
 #include <stdio.h>
 #include <string.h>
 #include <inttypes.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <sys/types.h>
+
+// long is 32 bits on Windows (and on 32-bit systems), so plain fseek/ftell
+// can't go past 2 GB: use the 64-bit versions
+#ifdef _WIN32
+#define fseek   _fseeki64
+#define ftell   _ftelli64
+#else
+#define fseek   fseeko
+#define ftell   ftello
+#endif
 
 #include "wildcard.h"
 #include "lzari.h"
@@ -563,10 +579,10 @@ void usage(const char* app_bin)
     return;
 }
 
-off_t get_file_size(FILE *file)
+int64_t get_file_size(FILE *file)
 {
     fseek(file, 0, SEEK_END);
-    off_t size = ftell(file);
+    int64_t size = ftell(file);
     fseek(file, 0, SEEK_SET);
     return size;
 }
@@ -578,7 +594,7 @@ int main(int argc, char *argv[])
     char tmp[0x40];
     char prod_code[5];
     int pal, prod_num = -1;
-    off_t file_size;
+    int64_t file_size;
     FILE *fp, *fout;
     uint32_t sector_size = 0;
     uint8_t disc_type = DISC_NONE;
@@ -669,7 +685,7 @@ int main(int argc, char *argv[])
         tmp[sizeof(tmp)-1] = 0;
         if (wildcard_match(tmp, "BOOT2*cdrom0:\\*_*.*"))
         {
-            printf("    + Found SYSTEM.CNF data at offset 0x%lX\n", ftell(fp) - sizeof(tmp));
+            printf("    + Found SYSTEM.CNF data at offset 0x%" PRIX64 "\n", (uint64_t)(ftell(fp) - (int64_t)sizeof(tmp)));
             strncpy(prod_code, strchr(tmp, '\\') + 1, 4);
             prod_code[4] = 0;
             sscanf(strchr(tmp, '\\') + 5, "_%d.%d", &pal, &prod_num);

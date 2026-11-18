@@ -142,6 +142,31 @@ def test_cd(tmp, letters, number, vmode, region):
         print(out)
 
 
+def test_large_dvd(tmp):
+    # past 2 GB: offsets don't fit a 32-bit long (Windows, 32-bit systems)
+    sectors = (1 << 20) + 1024          # 2 GiB + 2 MiB
+    cnf_lba = (1 << 20) + 512           # SYSTEM.CNF past the 2 GiB mark
+    print('DVD larger than 2 GB (%d bytes, SYSTEM.CNF at 0x%X):' % (sectors * 2048, cnf_lba * 2048))
+    image = os.path.join(tmp, 'large.iso')
+    cnf = system_cnf('SLUS_123.45', 'NTSC').ljust(2048, b'\0')
+    with open(image, 'wb') as f:        # sparse where the filesystem allows it
+        f.truncate(sectors * 2048)
+        f.seek(cnf_lba * 2048)
+        f.write(cnf)
+    code, out = run_patcher(image, None)
+    check(code == 0, 'exit code 0')
+    check('Image size: %d bytes' % (sectors * 2048) in out, 'image size reported as %d' % (sectors * 2048))
+    check('offset 0x%X' % (cnf_lba * 2048) in out, 'SYSTEM.CNF found at 0x%X' % (cnf_lba * 2048))
+    with open(image, 'rb') as f:
+        boot = f.read(16 * 2048)
+        f.seek(cnf_lba * 2048)
+        check(f.read(2048) == cnf, 'SYSTEM.CNF sector untouched')
+    check(os.path.getsize(image) == sectors * 2048, 'image size unchanged')
+    check_boot_sectors(boot, 'SLUS', 12345, 'NTSC', None, 2, sectors)
+    if failures:
+        print(out)
+
+
 def test_no_disc_id(tmp):
     print('image without a disc ID:')
     image = os.path.join(tmp, 'no_id.iso')
@@ -160,6 +185,8 @@ def main():
                  (test_cd, 'SCES', 50003, 'PAL', 'W')]:
         with tempfile.TemporaryDirectory() as tmp:
             case[0](tmp, *case[1:])
+    with tempfile.TemporaryDirectory() as tmp:
+        test_large_dvd(tmp)
     with tempfile.TemporaryDirectory() as tmp:
         test_no_disc_id(tmp)
 

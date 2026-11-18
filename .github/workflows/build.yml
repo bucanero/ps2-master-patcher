@@ -27,7 +27,15 @@ jobs:
             bin: ps2-master-patcher
           - name: windows-x64
             os: windows-latest
+            msystem: MINGW64
+            msys-gcc: mingw-w64-x86_64-gcc
             # static: no MinGW runtime DLLs needed
+            make: make CC=gcc CFLAGS="-Wall -Wextra -O2 -static" TARGET_PS2MDBP=ps2-master-patcher.exe
+            bin: ps2-master-patcher.exe
+          - name: windows-x86
+            os: windows-latest
+            msystem: MINGW32
+            msys-gcc: mingw-w64-i686-gcc
             make: make CC=gcc CFLAGS="-Wall -Wextra -O2 -static" TARGET_PS2MDBP=ps2-master-patcher.exe
             bin: ps2-master-patcher.exe
 
@@ -42,8 +50,8 @@ jobs:
         if: runner.os == 'Windows'
         uses: msys2/setup-msys2@v2
         with:
-          msystem: MINGW64
-          install: make mingw-w64-x86_64-gcc
+          msystem: ${{ matrix.msystem }}
+          install: make ${{ matrix.msys-gcc }}
 
       - name: Build
         if: runner.os != 'Windows'
@@ -84,9 +92,9 @@ jobs:
       - name: Package
         run: |
           for d in ps2-master-patcher-*/; do
-            (cd "$d" && zip -9 "../${d%/}.zip" *)
+            (cd "$d" && zip -9 "../${d%/}.zip" ./*)
           done
-          ls -la *.zip
+          ls -la ./*.zip
 
       - name: Publish release
         uses: softprops/action-gh-release@v2

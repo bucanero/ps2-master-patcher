@@ -107,7 +107,8 @@ The exit code is 0 on success and non-zero if the image couldn't be patched
 
 ## Download
 
-Builds for Linux, macOS (Apple Silicon and Intel) and Windows are attached to
+Builds for Linux (x64), macOS (Apple Silicon and Intel) and Windows (x64 and
+32-bit x86) are attached to
 each [release](https://github.com/bucanero/ps2-master-patcher/releases), and to
 every [CI run](https://github.com/bucanero/ps2-master-patcher/actions/workflows/build.yml)
 as artifacts.
@@ -122,6 +123,7 @@ make
 
 - macOS universal binary: `make CFLAGS="-Wall -Wextra -O2 -arch arm64 -arch x86_64"`
 - Windows (MinGW-w64, or MSYS2): `make CC=x86_64-w64-mingw32-gcc TARGET_PS2MDBP=ps2-master-patcher.exe`
+  (32-bit: `CC=i686-w64-mingw32-gcc`)
 - Install to `/usr/local/bin`: `make install`
 
 ## Credits
@@ -139,7 +141,9 @@ make
 
 `tests/smoke_test.py` builds small fake DVD and CD images, patches them and
 checks the result independently (logo, magic numbers, master disc sector, CD
-EDC). CI runs it on every platform.
+EDC). It also patches a sparse DVD image larger than 2 GB, to check file
+offsets past 2 GB work (on Windows, and in 32-bit builds). CI runs it on every
+platform.
 
 ```sh
 python3 tests/smoke_test.py ./ps2-master-patcher
