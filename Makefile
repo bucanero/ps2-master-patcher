@@ -11,13 +11,15 @@ INSTALL_DIR = /usr/local/bin
 RM = rm
 CP = cp
 
-all: ps2-master-patcher
+all: $(TARGET_PS2MDBP)
 
-ps2-master-patcher:
+$(TARGET_PS2MDBP): $(SRC_PS2MDBP) $(wildcard *.h)
 	$(CC) $(CFLAGS) $(SRC_PS2MDBP) -o $(TARGET_PS2MDBP)
 
-install: ps2-master-patcher
+install: $(TARGET_PS2MDBP)
 	$(CP) $(TARGET_PS2MDBP) $(INSTALL_DIR)
 
 clean:
-	$(RM) $(TARGET_PS2MDBP)
+	$(RM) -f $(TARGET_PS2MDBP)
+
+.PHONY: all install clean
