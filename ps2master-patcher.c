@@ -10,12 +10,33 @@
  *
  */
 
+// 64-bit file offsets: PS2 DVD images are larger than 2 GB
+#ifndef _WIN32
+#define _FILE_OFFSET_BITS 64
+#endif
+
 #include <stdio.h>
 #include <string.h>
 #include <inttypes.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <sys/types.h>
+
+// long is 32 bits on Windows (and on 32-bit systems), so plain fseek/ftell
+// can't go past 2 GB: use the 64-bit versions
+#ifdef _WIN32
+#define fseek   _fseeki64
+#define ftell   _ftelli64
+#else
+#define fseek   fseeko
+#define ftell   ftello
+#endif
+
+// Set by the build from a release tag (make VERSION=x.y.z); this is the default
+#ifndef PATCHER_VERSION
+#define PATCHER_VERSION "1.0.0"
+#endif
 
 #include "wildcard.h"
 #include "lzari.h"
@@ -557,16 +578,17 @@ int write_master_disc_sector(FILE *file,
 void usage(const char* app_bin)
 {
     puts("This program accepts PS2 DVD (.ISO) and PS2 CD (.BIN) images\n");
-    printf("Usage :\n%s <input.ISO/input.BIN> [region]\n\n", app_bin);
+    printf("Usage :\n%s <input.ISO/input.BIN> [region]\n", app_bin);
+    printf("%s --version\n\n", app_bin);
     puts("Information :");
     puts(" - region   : J/U/E/W (Japan/USA/Europe/World - optional, default=USA)\n");
     return;
 }
 
-off_t get_file_size(FILE *file)
+int64_t get_file_size(FILE *file)
 {
     fseek(file, 0, SEEK_END);
-    off_t size = ftell(file);
+    int64_t size = ftell(file);
     fseek(file, 0, SEEK_SET);
     return size;
 }
@@ -578,13 +600,18 @@ int main(int argc, char *argv[])
     char tmp[0x40];
     char prod_code[5];
     int pal, prod_num = -1;
-    off_t file_size;
+    int64_t file_size;
     FILE *fp, *fout;
     uint32_t sector_size = 0;
     uint8_t disc_type = DISC_NONE;
     uint8_t region = REGION_USA;
  
-    printf("\n\tPlayStation 2 Master Disc Boot Patcher by Bucanero\n\n");
+    if (argc == 2 && (strcmp(argv[1], "--version") == 0 || strcmp(argv[1], "-v") == 0)) {
+        printf("ps2-master-patcher %s\n", PATCHER_VERSION);
+        return 0;
+    }
+
+    printf("\n\tPlayStation 2 Master Disc Boot Patcher v%s by Bucanero\n\n", PATCHER_VERSION);
 
     if (argc < 2) {
         usage(argv[0]);
@@ -669,7 +696,7 @@ int main(int argc, char *argv[])
         tmp[sizeof(tmp)-1] = 0;
         if (wildcard_match(tmp, "BOOT2*cdrom0:\\*_*.*"))
         {
-            printf("    + Found SYSTEM.CNF data at offset 0x%lX\n", ftell(fp) - sizeof(tmp));
+            printf("    + Found SYSTEM.CNF data at offset 0x%" PRIX64 "\n", (uint64_t)(ftell(fp) - (int64_t)sizeof(tmp)));
             strncpy(prod_code, strchr(tmp, '\\') + 1, 4);
             prod_code[4] = 0;
             sscanf(strchr(tmp, '\\') + 5, "_%d.%d", &pal, &prod_num);

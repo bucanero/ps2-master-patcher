@@ -53,3 +53,10 @@ dkms.conf
 
 # debug information files
 *.dwo
+
+# ps2-master-patcher
+ps2-master-patcher
+
+# sectors saved by the patcher before overwriting them
+DVD_SECTORS.BIN
+CD_SECTORS.BIN
