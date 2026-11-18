@@ -33,6 +33,11 @@
 #define ftell   ftello
 #endif
 
+// Set by the build from a release tag (make VERSION=x.y.z); this is the default
+#ifndef PATCHER_VERSION
+#define PATCHER_VERSION "1.0.0"
+#endif
+
 #include "wildcard.h"
 #include "lzari.h"
 #include "cdrom.h"
@@ -573,7 +578,8 @@ int write_master_disc_sector(FILE *file,
 void usage(const char* app_bin)
 {
     puts("This program accepts PS2 DVD (.ISO) and PS2 CD (.BIN) images\n");
-    printf("Usage :\n%s <input.ISO/input.BIN> [region]\n\n", app_bin);
+    printf("Usage :\n%s <input.ISO/input.BIN> [region]\n", app_bin);
+    printf("%s --version\n\n", app_bin);
     puts("Information :");
     puts(" - region   : J/U/E/W (Japan/USA/Europe/World - optional, default=USA)\n");
     return;
@@ -600,7 +606,12 @@ int main(int argc, char *argv[])
     uint8_t disc_type = DISC_NONE;
     uint8_t region = REGION_USA;
  
-    printf("\n\tPlayStation 2 Master Disc Boot Patcher by Bucanero\n\n");
+    if (argc == 2 && (strcmp(argv[1], "--version") == 0 || strcmp(argv[1], "-v") == 0)) {
+        printf("ps2-master-patcher %s\n", PATCHER_VERSION);
+        return 0;
+    }
+
+    printf("\n\tPlayStation 2 Master Disc Boot Patcher v%s by Bucanero\n\n", PATCHER_VERSION);
 
     if (argc < 2) {
         usage(argv[0]);

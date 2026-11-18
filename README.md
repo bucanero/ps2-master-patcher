@@ -62,10 +62,12 @@ CD-R, use a raw `.bin`/`.cue` image.
 
 ```
 ps2-master-patcher <image.iso | image.bin> [region]
+ps2-master-patcher --version
 ```
 
 - `region`: `J` (Japan), `U` (USA), `E` (Europe) or `W` (World). Optional,
   the default is USA. Japan uses its own sector layout (see ps2boot.txt).
+- `--version` (or `-v`): prints `ps2-master-patcher <version>` and exits.
 
 > [!IMPORTANT]
 > The image is **modified in place**. The two sectors it replaces (14 - 15)
@@ -84,7 +86,7 @@ ps2-master-patcher myapp.iso W
 ```
 
 ```
-	PlayStation 2 Master Disc Boot Patcher by Bucanero
+	PlayStation 2 Master Disc Boot Patcher v1.0.0 by Bucanero
 
 [i] Forcing World region
 [i] Reading 'myapp.iso'...

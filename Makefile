@@ -13,8 +13,12 @@ CP = cp
 
 all: $(TARGET_PS2MDBP)
 
+# VERSION=x.y.z (or vx.y.z, like a tag) overrides the version in the source
+VERSION ?=
+VERSION_DEF = $(if $(VERSION),-DPATCHER_VERSION=\"$(patsubst v%,%,$(VERSION))\")
+
 $(TARGET_PS2MDBP): $(SRC_PS2MDBP) $(wildcard *.h)
-	$(CC) $(CFLAGS) $(SRC_PS2MDBP) -o $(TARGET_PS2MDBP)
+	$(CC) $(CFLAGS) $(VERSION_DEF) $(SRC_PS2MDBP) -o $(TARGET_PS2MDBP)
 
 install: $(TARGET_PS2MDBP)
 	$(CP) $(TARGET_PS2MDBP) $(INSTALL_DIR)

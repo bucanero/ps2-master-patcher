@@ -8,6 +8,7 @@ master disc sector) and the CD-ROM EDC.
 usage: smoke_test.py <path to ps2-master-patcher binary>
 """
 import os
+import re
 import struct
 import subprocess
 import sys
@@ -167,6 +168,21 @@ def test_large_dvd(tmp):
         print(out)
 
 
+def test_version():
+    # EXPECTED_VERSION: what a release build must report (CI sets it from the tag)
+    expected = os.environ.get('EXPECTED_VERSION') or None
+    print('--version%s:' % (' (expecting %s)' % expected if expected else ''))
+    for flag in ('--version', '-v'):
+        p = subprocess.run([PATCHER, flag], capture_output=True, text=True)
+        m = re.fullmatch(r'ps2-master-patcher (\S+)\s*', p.stdout)
+        check(p.returncode == 0 and m is not None, '%s prints "ps2-master-patcher <version>" (%r)' % (flag, p.stdout.strip()))
+    version = m.group(1) if m else None
+    if expected:
+        check(version == expected, 'version is %s' % expected)
+    p = subprocess.run([PATCHER], capture_output=True, text=True)
+    check('Boot Patcher v%s ' % version in p.stdout, 'banner shows the same version')
+
+
 def test_no_disc_id(tmp):
     print('image without a disc ID:')
     image = os.path.join(tmp, 'no_id.iso')
@@ -177,6 +193,7 @@ def test_no_disc_id(tmp):
 
 
 def main():
+    test_version()
     for case in [(test_dvd, 'SLUS', 12345, 'NTSC', None),
                  (test_dvd, 'SLES', 54321, 'PAL', 'E'),
                  (test_dvd, 'APOL', 99999, 'NTSC', 'W'),
